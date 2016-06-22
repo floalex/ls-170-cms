@@ -155,9 +155,8 @@ class CMSTest < Minitest::Test
   end
 
   def test_signout
-    post "/users/signin", username: "admin", password: "secret"
-    get last_response["Location"]
-    assert_includes last_response.body, "Welcome"
+    get "/", {}, {"rack.session" => { username: "admin" } }
+    assert_includes last_response.body, "Signed in as admin"
 
     post "/users/signout"
     get last_response["Location"]
