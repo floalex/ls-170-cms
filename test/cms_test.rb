@@ -1,5 +1,7 @@
 ENV["RACK_ENV"] = "test"
 
+require "fileutils"
+
 require "minitest/autorun"
 require "rack/test"
 
@@ -12,22 +14,52 @@ class CMSTest < Minitest::Test
     Sinatra::Application
   end
 
+  def setup
+    FileUtils.mkdir_p(data_path)
+  end
+
+  def teardown
+    FileUtils.rm_rf(data_path)
+  end
+
+  # this method created empty files by default but an optional second 
+  # parameter allows the contents of the file to be passed in
+  def create_document(name, content = "")
+    File.open(File.join(data_path, name), "w") do |file|
+      file.write(content)
+    end
+  end
+
   def test_index
+    create_document "about.md"
+    create_document "changes.txt"
+
     get "/"
 
     assert_equal 200, last_response.status
     assert_equal "text/html;charset=utf-8", last_response["Content-Type"]
     assert_includes last_response.body, "about.md"
     assert_includes last_response.body, "changes.txt"
-    assert_includes last_response.body, "history.txt"
   end
 
   def test_viewing_text_document
+    create_document "history.txt", "Ruby 0.95 released"
+
     get "/history.txt"
 
     assert_equal 200, last_response.status
     assert_equal "text/plain", last_response["Content-Type"]
-    assert_includes last_response.body, "2015 - Ruby 2.3 released."
+    assert_includes last_response.body, "Ruby 0.95 released"
+  end
+
+  def test_viewing_markdown_document
+    create_document "about.md", "# Ruby is..."
+
+    get "/about.md"
+
+    assert_equal 200, last_response.status
+    assert_equal "text/html;charset=utf-8", last_response["Content-Type"]
+    assert_includes last_response.body, "<h1>Ruby is...</h1>"
   end
 
   def test_document_not_found
@@ -41,15 +73,9 @@ class CMSTest < Minitest::Test
     assert_includes last_response.body, "notafile.txt does not exist"
   end
 
-  def test_viewing_markdown_document
-    get "/about.md"
-
-    assert_equal 200, last_response.status
-    assert_equal "text/html;charset=utf-8", last_response["Content-Type"]
-    assert_includes last_response.body, "<h1>Ruby is...</h1>"
-  end
-
   def test_editing_document
+    create_document "changes.txt"
+
     get "/changes.txt/edit"
 
     assert_equal 200, last_response.status
