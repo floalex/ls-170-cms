@@ -1,4 +1,4 @@
 ---
-admin: secret
-developer: alex
-superuser: super
+admin: $2a$10$aFN7Rq3aHCv2H6wWGq7IKuSLPI/rRfQ7C3pWVOj8CpDipI4qCXpcu
+developer: $2a$10$wJnRkeCoPHBil3E5pI/qFe5Dvig/ZG9rGkUwVxlHsrJjHmteBOdEy
+superuser: $2a$10$RJM2dChoemcx/pKSRw6jqeCNcu1L3KxMZFWk9.ezD6nCOK6PXnSbS

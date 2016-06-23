@@ -4,9 +4,19 @@ require "sinatra/reloader"
 require "tilt/erubis"
 require "redcarpet"
 
+require "bcrypt"
+
 configure do
   enable :sessions
   set :session_secret, 'super secret' 
+end
+
+def data_path
+  if ENV["RACK_ENV"] == "test"
+    File.expand_path("../test/data", __FILE__)
+  else
+    FILE.expand_path("../data", __FILE__)
+  end
 end
 
 def load_user_credentials
@@ -18,14 +28,16 @@ def load_user_credentials
   YAML.load_file(credentials_path)
 end
 
-def data_path
-  if ENV["RACK_ENV"] == "test"
-    File.expand_path("../test/data", __FILE__)
+def valid_credentials?(username, password)
+  credentials = load_user_credentials
+
+  if credentials.key?(username)
+    bcrypt_password = BCrypt::Password.new(credentials[username])
+    bcrypt_password == password
   else
-    File.expand_path("../data", __FILE__)
+    false
   end
 end
-
 
 def render_markdown(text) 
   markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML)
@@ -89,6 +101,7 @@ end
 
 get "/:filename" do
   file_path = File.join(data_path, params[:filename])
+  # file_path = File.join(data_path, File.basename(params[:filename]))
 
   if File.exist?(file_path)
     load_file_content(file_path)
@@ -136,10 +149,9 @@ get "/users/signin" do
 end
 
 post "/users/signin" do
-  credentials = load_user_credentials
   username = params[:username]
 
-  if credentials.key?(username) && credentials[username] == params[:password]
+  if valid_credentials?(username, params[:password])
     session[:username] = params[:username]
     session[:message] = "Welcome"
     redirect "/"
